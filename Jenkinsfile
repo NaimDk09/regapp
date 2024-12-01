@@ -2,6 +2,26 @@ pipeline {
     agent any
 
     stages {
+        stage('Prepare Stable Image') {
+            steps {
+                script {
+                    // Check if the 'stable' image exists
+                    def stableImageExists = sh(script: "docker images -q reg-app:stable", returnStdout: true).trim() != ''
+
+                    if (!stableImageExists) {
+                        echo "No stable image found. Creating an initial stable version."
+                        // Build and tag the 'stable' image if it doesn't exist
+                        sh '''
+                        docker build -t reg-app:latest .
+                        docker tag reg-app:latest reg-app:stable
+                        '''
+                    } else {
+                        echo "Stable image already exists."
+                    }
+                }
+            }
+        }
+
         stage('Cleanup') {
             steps {
                 script {
@@ -36,9 +56,8 @@ pipeline {
         stage('Test Application') {
             steps {
                 script {
-                    // Add testing commands here
                     echo 'Testing the application...'
-                    // For example: sh 'npm test' (for React) or run Django tests
+                    // Add your test commands here
                 }
             }
         }
@@ -93,26 +112,19 @@ pipeline {
 
         failure {
             script {
-                echo 'Deployment failed, checking for stable image to rollback.'
+                echo 'Deployment failed, rolling back to the previous stable version.'
 
-                // Check if the stable image exists
+                // Check if stable image exists
                 def stableImageExists = sh(script: "docker images -q reg-app:stable", returnStdout: true).trim() != ''
-                
+
                 if (stableImageExists) {
-                    echo "Stable image found. Rolling back to stable version."
-                    // Stop any running container using port 8002
-                    def existingContainer = sh(script: "docker ps -aq --filter 'name=reg-app'", returnStdout: true).trim()
-                    if (existingContainer) {
-                        sh "docker stop ${existingContainer} || true"
-                        sh "docker rm ${existingContainer} || true"
-                    }
-                    // Run the stable image
+                    echo "Rolling back to stable version."
+                    // Run the stable image directly
                     sh 'docker run -d --name reg-app -p 8002:8002 reg-app:stable'
                 } else {
-                    echo "No stable image found to rollback. Skipping rollback."
+                    error("No stable image found to rollback.")
                 }
             }
         }
-
     }
 }
