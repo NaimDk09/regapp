@@ -93,19 +93,26 @@ pipeline {
 
         failure {
             script {
-                echo 'Deployment failed, rolling back to the previous stable version.'
+                echo 'Deployment failed, checking for stable image to rollback.'
 
-                // Check if stable image exists
+                // Check if the stable image exists
                 def stableImageExists = sh(script: "docker images -q reg-app:stable", returnStdout: true).trim() != ''
-
+                
                 if (stableImageExists) {
-                    echo "Rolling back to stable version."
-                    // Run the stable image directly
+                    echo "Stable image found. Rolling back to stable version."
+                    // Stop any running container using port 8002
+                    def existingContainer = sh(script: "docker ps -aq --filter 'name=reg-app'", returnStdout: true).trim()
+                    if (existingContainer) {
+                        sh "docker stop ${existingContainer} || true"
+                        sh "docker rm ${existingContainer} || true"
+                    }
+                    // Run the stable image
                     sh 'docker run -d --name reg-app -p 8002:8002 reg-app:stable'
                 } else {
-                    error("No stable image found to rollback.")
+                    echo "No stable image found to rollback. Skipping rollback."
                 }
             }
         }
+
     }
 }
