@@ -6,19 +6,19 @@ pipeline {
             steps {
                 script {
                     // Stop and remove the container if it exists
-                    def containerId = sh(script: "docker ps -q --filter 'name=my-react-django-app'", returnStdout: true).trim()
+                    def containerId = sh(script: "docker ps -q --filter 'reg-app'", returnStdout: true).trim()
                     if (containerId) {
                         echo "Stopping and removing container: ${containerId}"
                         sh "docker stop ${containerId} || true"
                         sh "docker rm ${containerId} || true"
                     } else {
-                        echo 'No container found using port 8001'
+                        echo 'No container found using port 8002'
                     }
 
-                    // Check that port 8001 is not in use
-                    def portInUse = sh(script: "lsof -i :8001", returnStatus: true) == 0
+                    // Check that port 8002 is not in use
+                    def portInUse = sh(script: "lsof -i :8002", returnStatus: true) == 0
                     if (portInUse) {
-                        error("Port 8001 is still in use after cleanup. Please stop the process using this port before deploying.")
+                        error("Port 8002 is still in use after cleanup. Please stop the process using this port before deploying.")
                     }
                 }
             }
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 script {
                     echo 'Building the Docker image...'
-                    sh 'docker build -t my-react-django-app:latest .'
+                    sh 'docker build -t reg-app:latest .'
                 }
             }
         }
@@ -86,7 +86,7 @@ pipeline {
         success {
             script {
                 echo 'Tagging the latest image as stable...'
-                sh 'docker tag my-react-django-app:latest my-react-django-app:stable'
+                sh 'docker tag reg-app:latest reg-app:stable'
             }
             echo 'The pipeline has completed successfully!'
         }
@@ -96,12 +96,12 @@ pipeline {
                 echo 'Deployment failed, rolling back to the previous stable version.'
 
                 // Check if stable image exists
-                def stableImageExists = sh(script: "docker images -q my-react-django-app:stable", returnStdout: true).trim() != ''
+                def stableImageExists = sh(script: "docker images -q reg-app:stable", returnStdout: true).trim() != ''
 
                 if (stableImageExists) {
                     echo "Rolling back to stable version."
                     // Run the stable image directly
-                    sh 'docker run -d --name my-react-django-app -p 8001:8001 my-react-django-app:stable'
+                    sh 'docker run -d --name reg-app -p 8002:8002 reg-app:stable'
                 } else {
                     error("No stable image found to rollback.")
                 }
