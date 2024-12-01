@@ -49,6 +49,10 @@ pipeline {
                 script {
                     echo 'Building the Docker image...'
                     sh 'docker build -t reg-app:latest .'
+
+                    // After building the image, run the container
+                    echo 'Running the Docker container...'
+                    sh 'docker run -d --name reg-app -p 8002:8002 reg-app:latest'
                 }
             }
         }
