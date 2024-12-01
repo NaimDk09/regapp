@@ -62,7 +62,7 @@ pipeline {
             }
         }
 
-        stage('Terraform Init') {
+        /* stage('Terraform Init') {
             steps {
                 script {
                     echo 'Initializing Terraform...'
@@ -94,7 +94,7 @@ pipeline {
                 }
             }
         }
-    }
+    } */
 
     post {
         always {
