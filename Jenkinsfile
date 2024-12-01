@@ -6,7 +6,7 @@ pipeline {
             steps {
                 script {
                     // Stop and remove the container if it exists
-                    def containerId = sh(script: "docker ps -q --filter 'reg-app'", returnStdout: true).trim()
+                    def containerId = sh(script: "docker ps -q --filter 'name=reg-app'", returnStdout: true).trim()
                     if (containerId) {
                         echo "Stopping and removing container: ${containerId}"
                         sh "docker stop ${containerId} || true"
