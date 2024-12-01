@@ -32,10 +32,10 @@ pipeline {
                         sh "docker stop ${containerId} || true"
                         sh "docker rm ${containerId} || true"
                     } else {
-                        echo 'No container found using port 8002'
+                        echo 'No container found using name reg-app'
                     }
 
-                    // Check that port 8002 is not in use
+                    // Check if port 8002 is in use
                     def portInUse = sh(script: "lsof -i :8002", returnStatus: true) == 0
                     if (portInUse) {
                         error("Port 8002 is still in use after cleanup. Please stop the process using this port before deploying.")
@@ -62,6 +62,7 @@ pipeline {
             }
         }
 
+        // Uncomment and modify these stages as needed
         /* stage('Terraform Init') {
             steps {
                 script {
